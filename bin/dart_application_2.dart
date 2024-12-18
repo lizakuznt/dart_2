@@ -9,29 +9,72 @@ void main() {
   int shipsToPlace = 3; // Количество кораблей
   placeShips(ships, shipsToPlace);
 
-  int attempts = 0;
-  int hits = 0;
+  int attemptsPlayer1 = 0, attemptsPlayer2 = 0;
+  int hitsPlayer1 = 0, hitsPlayer2 = 0;
+  int missesPlayer1 = 0, missesPlayer2 = 0;
+
+  String currentPlayer = 'Игрок 1'; // Игроки по очереди
 
   print("Добро пожаловать в Морской бой!");
-  while (hits < shipsToPlace) {
+  while (hitsPlayer1 + hitsPlayer2 < shipsToPlace) {
     printBoard(board);
-    print("Введите координаты выстрела (формат: x y):");
+    print("$currentPlayer, введите координаты выстрела (формат: x y):");
     List<int> shot = getShot(size);
-    attempts++;
+
+    if (currentPlayer == 'Игрок 1') {
+      attemptsPlayer1++;
+    } else {
+      attemptsPlayer2++;
+    }
 
     int x = shot[0], y = shot[1];
     if (ships[x][y]) {
       print("Попадание!");
       board[x][y] = 'X';
       ships[x][y] = false;
-      hits++;
+      if (currentPlayer == 'Игрок 1') {
+        hitsPlayer1++;
+      } else {
+        hitsPlayer2++;
+      }
     } else {
       print("Мимо!");
       board[x][y] = 'O';
+      if (currentPlayer == 'Игрок 1') {
+        missesPlayer1++;
+      } else {
+        missesPlayer2++;
+      }
     }
+
+    // Переключаем игрока
+    currentPlayer = (currentPlayer == 'Игрок 1') ? 'Игрок 2' : 'Игрок 1';
   }
 
-  print("Поздравляем! Вы подбили все корабли за $attempts попыток.");
+  print("Игра окончена!");
+
+  // Сбор статистики
+  String stats = '''
+    Статистика игры:
+    Игрок 1:
+    - Попадания: $hitsPlayer1
+    - Промахи: $missesPlayer1
+    - Всего попыток: $attemptsPlayer1
+    - Оставшиеся корабли на поле: ${shipsToPlace - hitsPlayer1}
+    
+    Игрок 2:
+    - Попадания: $hitsPlayer2
+    - Промахи: $missesPlayer2
+    - Всего попыток: $attemptsPlayer2
+    - Оставшиеся корабли на поле: ${shipsToPlace - hitsPlayer2}
+    
+    Всего попыток: ${attemptsPlayer1 + attemptsPlayer2}
+  ''';
+
+  print(stats);
+
+  // Запись статистики в файл
+  saveStats(stats);
 }
 
 void placeShips(List<List<bool>> ships, int shipsToPlace) {
@@ -74,4 +117,20 @@ List<int> getShot(int size) {
       print("Некорректный ввод. Введите два числа, разделенных пробелом.");
     }
   }
+}
+
+void saveStats(String stats) {
+  // Создаем каталог для статистики
+  final directory = Directory('game_stats');
+  if (!directory.existsSync()) {
+    directory.createSync();
+  }
+
+  // Записываем статистику в файл с уникальным именем (например, с текущей датой и временем)
+  final timestamp =
+      DateTime.now().toString().replaceAll(':', '-').replaceAll(' ', '_');
+  final file = File('game_stats/stats_$timestamp.txt');
+  file.writeAsStringSync(stats);
+
+  print("Статистика сохранена в файл ${file.path}");
 }
